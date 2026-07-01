@@ -1,0 +1,512 @@
+[
+  {
+    "event_type": "submission",
+    "content_id": "35e77c79-70b2-4642-a019-7ec597cc7860",
+    "creator_id": "test-user-ai",
+    "timestamp": "2026-07-01T04:40:50.662604+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.3,
+    "llm_score": 0.2,
+    "llm_reasoning": "The text features complex sentence structures and vocabulary, but the themes and ideas presented are common in human-written discussions about AI, suggesting a human author.",
+    "stylometric_score": 0.45,
+    "stylometric_metrics": {
+      "word_count": 43,
+      "type_token_ratio": 0.884,
+      "avg_sentence_length": 14.333,
+      "sentence_length_variance": 29.556,
+      "punctuation_density": 0.047
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "5d55c674-dbfb-4b81-a736-fa3afbb9bf41",
+    "creator_id": "test-user-formal",
+    "timestamp": "2026-07-01T04:41:51.266428+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.3,
+    "llm_score": 0.2,
+    "llm_reasoning": "The text features complex sentence structures and domain-specific terminology, but the language and tone are consistent with academic writing, suggesting a human author.",
+    "stylometric_score": 0.45,
+    "stylometric_metrics": {
+      "word_count": 43,
+      "type_token_ratio": 0.86,
+      "avg_sentence_length": 21.5,
+      "sentence_length_variance": 30.25,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
+    "creator_id": "test-user-human",
+    "timestamp": "2026-07-01T04:50:52.049971+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.14,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text contains casual language, personal experience, and subjective opinions, which are characteristic of human-written reviews.",
+    "stylometric_score": 0.35,
+    "stylometric_metrics": {
+      "word_count": 56,
+      "type_token_ratio": 0.875,
+      "avg_sentence_length": 11.2,
+      "sentence_length_variance": 44.56,
+      "punctuation_density": 0.018
+    },
+    "status": "under_review",
+    "appeal_filed": true
+  },
+  {
+    "event_type": "submission",
+    "content_id": "4144c6a8-64fe-4cd7-84d9-a011f51406a2",
+    "creator_id": "test-user-edited-ai",
+    "timestamp": "2026-07-01T04:51:17.146443+00:00",
+    "attribution": "uncertain",
+    "confidence": 0.36,
+    "llm_score": 0.2,
+    "llm_reasoning": "The text appears to be a personal reflection with a balanced view, using phrases like 'I've been thinking' and 'genuine tradeoffs', which is more typical of human writing.",
+    "stylometric_score": 0.6,
+    "stylometric_metrics": {
+      "word_count": 40,
+      "type_token_ratio": 0.9,
+      "avg_sentence_length": 13.333,
+      "sentence_length_variance": 22.222,
+      "punctuation_density": 0.025
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "appeal",
+    "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
+    "creator_id": "test-user-human",
+    "timestamp": "2026-07-01T04:55:09.971114+00:00",
+    "original_attribution": "likely_human",
+    "original_confidence": 0.14,
+    "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical.",
+    "status": "under_review"
+  },
+  {
+    "event_type": "submission",
+    "content_id": "8181fa31-4f31-4993-9056-b681e523ff82",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:55:58.471635+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "eb34e837-54b1-4970-9e91-5c32aa3efe36",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:55:58.928731+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "27a5e7f9-ab2d-423e-b072-b5c5a4667922",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:55:59.367236+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "bfd47cd9-d51d-44f0-8a53-fc3aeb3122b7",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:55:59.820342+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text is short and appears to be a straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "23fb00be-e53f-496a-b6ce-d94b75c77c1f",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:00.085352+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "712680f9-609b-49f1-8085-5e843a546615",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:00.593523+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "353e1f43-d49e-4275-90c7-e15a60bd620a",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:00.921368+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "01a542f7-162c-43aa-82de-7bbe5f365918",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:01.300901+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "7f617b8f-adee-4a1a-a964-c93f590b5aeb",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:01.742004+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "cc1f7148-398f-4f91-99c6-97fee1e56ad4",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T04:56:02.235165+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text is short and straightforward, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "8ce32fb5-cc84-42c9-87f5-9d130dd0991d",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:00:58.981564+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "8bd0df56-25dd-401f-a953-20aa0fd357db",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:00:59.512808+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "78bf6a62-57df-49f5-a850-047dc3fd96d5",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:00:59.916454+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "ad6bd1e0-c790-49c0-9a65-83eb9e1ace35",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:00.431320+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "9bc7999f-fe27-4cff-8b16-7c0b20e919df",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:00.983972+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "2f4f8f9c-c9e4-450c-8edf-5933a24cb908",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:01.354047+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "ab531de4-fc92-4bb0-a171-41df6c886a9f",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:01.764169+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "3c67d1c4-2164-4208-94c8-ad16421d5481",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:02.169119+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "04772d45-ed46-4997-9cf7-e63000f0d8fc",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:02.687558+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text appears to be a simple, straightforward statement, likely written by a human for a specific purpose.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "db5b1c83-2f51-4bb1-953f-d9f02f453799",
+    "creator_id": "ratelimit-test",
+    "timestamp": "2026-07-01T05:01:03.237067+00:00",
+    "attribution": "likely_human",
+    "confidence": 0.26,
+    "llm_score": 0.0,
+    "llm_reasoning": "The text is short and appears to be a straightforward statement, lacking the complexity and nuances often found in AI-generated content.",
+    "stylometric_score": 0.65,
+    "stylometric_metrics": {
+      "word_count": 11,
+      "type_token_ratio": 1.0,
+      "avg_sentence_length": 11.0,
+      "sentence_length_variance": 0.0,
+      "punctuation_density": 0.0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  },
+  {
+    "event_type": "submission",
+    "content_id": "b446ab64-1476-4088-bcc7-a2cab318e820",
+    "creator_id": "demo-user",
+    "timestamp": "2026-07-01T05:38:17.743555+00:00",
+    "attribution": "uncertain",
+    "confidence": 0.5,
+    "llm_score": 0.5,
+    "llm_reasoning": "Groq signal failed, so neutral fallback score was used. Error: Expecting value: line 1 column 1 (char 0)",
+    "stylometric_score": 0.5,
+    "stylometric_metrics": {
+      "word_count": 0,
+      "type_token_ratio": 0,
+      "avg_sentence_length": 0,
+      "sentence_length_variance": 0,
+      "punctuation_density": 0
+    },
+    "status": "classified",
+    "appeal_filed": false
+  }
+]
