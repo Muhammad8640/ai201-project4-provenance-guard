@@ -1,31 +1,260 @@
-# Provenance Guard
+# Provenance Guard - Planning
 
-A backend system that helps creative-sharing platforms classify submitted text as likely AI-generated, likely human-written, or uncertain — with a transparency label, an audit trail, and an appeals process for contested classifications.
+## Project Overview
+
+Provenance Guard is a backend system that helps determine whether submitted text is likely AI-generated or human-written. The system combines multiple independent detection signals, calculates a confidence score, displays a transparency label to users, records every decision in an audit log, and provides an appeals workflow for creators.
 
 ---
 
-## Architecture Overview
+# Detection Signals
 
-**Submission flow:** a client sends raw text + a `creator_id` to `POST /submit`. The text is passed to two independent detection signals in sequence: (1) the Groq `llama-3.3-70b-versatile` model, which returns a holistic AI-likelihood score plus a short reasoning string, and (2) a pure-Python stylometric analyzer, which computes sentence-length variance, type-token ratio, average sentence length, and punctuation density and converts them into a second score. The two scores are combined with a weighted average (60% Groq / 40% stylometric) into a single confidence score. That score is mapped to one of three attribution buckets (`likely_ai`, `uncertain`, `likely_human`), which in turn determines the exact transparency label text returned to the caller. Every submission — both signal scores, the combined confidence, the attribution, and a fresh `content_id` — is written to a structured JSON audit log before the response goes out.
+## Signal 1 – Groq LLM Classification
 
-**Appeal flow:** a creator who disagrees with a verdict sends their `content_id` and a written explanation to `POST /appeal`. The system locates the matching submission in the audit log, flips its `status` to `under_review` and sets `appeal_filed: true`, and writes a second, separate `appeal` entry to the log recording the original attribution/confidence alongside the creator's reasoning. No automatic reclassification happens — a human reviewer is expected to read the appeal entry and the original submission entry side by side.
+### Purpose
+
+Uses the Groq Llama-3.3-70B model to evaluate the overall writing style and determine whether it resembles AI-generated or human-written text.
+
+### Output
+
+A score between **0 and 1**
+
+- 0.0 = Very likely human
+- 0.5 = Uncertain
+- 1.0 = Very likely AI
+
+### Strengths
+
+- Understands writing style holistically.
+- Detects repetitive AI language.
+- Considers semantic consistency.
+
+### Weaknesses
+
+- Can misclassify polished human writing.
+- Depends on the quality of the prompt.
+
+---
+
+## Signal 2 – Stylometric Heuristics
+
+The second signal analyzes measurable characteristics of the text.
+
+Metrics include:
+
+- Sentence length variance
+- Average sentence length
+- Vocabulary diversity (Type-Token Ratio)
+- Punctuation density
+
+Output:
+
+Score from 0–1
+
+- Higher score → more AI-like
+- Lower score → more human-like
+
+### Strengths
+
+- Fast
+- Completely deterministic
+- Doesn't require an API
+
+### Weaknesses
+
+- Less accurate on very short text
+- Poetry may produce misleading statistics
+
+---
+
+# Confidence Scoring
+
+The two signals are combined using weighted averaging.
+
+```
+Final Score =
+60% Groq Score
++
+40% Stylometric Score
+```
+
+## Thresholds
+
+```
+0.70 – 1.00
+Likely AI
+
+0.31 – 0.69
+Uncertain
+
+0.00 – 0.30
+Likely Human
+```
+
+Reasoning:
+
+The Groq model is given slightly more weight because it captures semantic meaning rather than only numerical writing characteristics.
+
+## What a Confidence Score Actually Means
+
+A score isn't a probability in any statistically rigorous sense — it's a weighted blend of two heuristic signals, and it should be read as "how much agreement exists across independent evidence," not "the odds this text is AI-generated."
+
+- **0.6** means the two signals lean mildly toward AI but don't agree strongly enough to commit — it lands in the `uncertain` band on purpose. A user seeing 0.6 should understand "the system noticed some AI-like patterns but isn't confident," not "there's a 60% chance this is AI."
+- **0.95** means both signals agree strongly and consistently — enough that the system is willing to state a direction plainly.
+- The gap between 0.51 and 0.95 is deliberately reflected in the label text, not just the number: only scores at or beyond the 0.70 / 0.30 thresholds commit to a directional label. Everything between stays in the `uncertain` bucket with wording that says the system couldn't decide, rather than manufacturing false confidence.
+
+## The False Positive Problem
+
+On a platform for creative work, wrongly labeling a human's writing as AI-generated is worse than the reverse — it damages a real person's reputation and their trust in the platform, whereas a missed AI-generated piece is a milder, more recoverable failure. This shaped three concrete decisions:
+
+1. **The uncertain band is wide on purpose** (0.31–0.69 is intentionally wider than a naive 0.5 midpoint split would suggest), so borderline cases default to "we're not sure" rather than a confident-sounding wrong answer.
+2. **The label copy for `likely_ai` doesn't claim certainty** — it says "appears likely to be AI-generated based on multiple detection signals" and always shows the numeric confidence, so a reader can judge for themselves how much weight to put on it rather than treating the label as a verdict.
+3. **The appeal path exists specifically so a false positive is recoverable** — a misclassified human creator has an immediate, low-friction way to contest the label rather than being stuck with it. Tracing this scenario end to end: a human writer submits formal, structurally consistent writing → the stylometric signal (and potentially the LLM signal) reads that formality as AI-like → confidence lands in the 0.5–0.7 range → the label reads as `likely_ai` or `uncertain` rather than a hard accusation → the creator sees the confidence number, recognizes it's not overwhelming, and files an appeal with context the model didn't have (e.g. "I'm a non-native English speaker" or "this is an academic excerpt") → the audit log preserves both the original verdict and the appeal side by side for a human reviewer.
+
+---
+
+# Transparency Labels
+
+## High Confidence AI
+
+> This content appears likely to be AI-generated based on multiple detection signals.
+>
+> Confidence: HIGH
+
+---
+
+## High Confidence Human
+
+> This content appears likely to be human-written based on multiple detection signals.
+>
+> Confidence: HIGH
+
+---
+
+## Uncertain
+
+> We are not confident enough to determine whether this content was AI-generated or human-written.
+>
+> This result should be treated as uncertain.
+
+---
+
+# Appeals Workflow
+
+A creator can appeal a classification by submitting:
+
+- content_id
+- creator_reasoning
+
+The system will
+
+1. Locate the original submission
+2. Update its status to:
+
+```
+under_review
+```
+
+3. Save the creator's reasoning
+4. Record the appeal inside the audit log
+
+No automatic reclassification is performed.
+
+## Who Can Appeal, and What a Reviewer Sees
+
+Any creator who received a `content_id` from a prior `/submit` call can file an appeal — no additional authentication is required at this stage, since the goal is a low-friction path for a creator to contest a result, not a gated review process.
+
+A human reviewer opening the appeal queue (in this implementation, reading `GET /log` and filtering for `event_type: "appeal"`) would see, for each appeal:
+- The original submission's full record — both signal scores, the combined confidence, the attribution, and the exact label text the creator saw — untouched and preserved exactly as it was at classification time.
+- The creator's own reasoning, in their own words, submitted as free text.
+- The current status (`under_review`), distinguishing appealed content from content that was simply classified and never contested.
+
+The reviewer's job is to compare the model's stated reasoning (visible in `llm_reasoning`) against the creator's explanation and make a human judgment call — the system deliberately does not attempt this itself.
+
+---
+
+# API Endpoints
+
+## GET /
+
+Returns a welcome message.
+
+---
+
+## POST /submit
+
+Input
+
+```json
+{
+  "text": "...",
+  "creator_id": "user123"
+}
+```
+
+Returns
+
+```json
+{
+  "content_id": "...",
+  "attribution": "likely_ai",
+  "confidence": 0.84,
+  "label": "...",
+  "status": "classified"
+}
+```
+
+---
+
+## POST /appeal
+
+Input
+
+```json
+{
+  "content_id": "...",
+  "creator_reasoning": "I wrote this myself."
+}
+```
+
+Returns
+
+```json
+{
+  "message": "Appeal received.",
+  "status": "under_review"
+}
+```
+
+---
+
+## GET /log
+
+Returns all audit log entries.
+
+---
+
+# Architecture
 
 ```
                  +----------------+
                  | POST /submit   |
                  +--------+-------+
                           |
+                          |
                  Receive Submission
                           |
         +-----------------+------------------+
         |                                    |
+        |                                    |
 +-------v--------+                  +---------v---------+
-| Groq Detector  |                  | Stylometric Scan  |
+| Groq Detector  |                  | Stylometric Scan |
 +-------+--------+                  +---------+---------+
         |                                     |
         +-----------------+-------------------+
                           |
-                 Combine Scores (60/40)
+                 Combine Scores
+                          |
+                 Confidence Score
                           |
                Determine Attribution
                           |
@@ -34,334 +263,124 @@ A backend system that helps creative-sharing platforms classify submitted text a
                   Save Audit Log
                           |
                   Return Response
+```
 
+Appeal Flow
+
+```
 POST /appeal
        |
-Find content_id in log
+Find content_id
        |
-Set status -> under_review, appeal_filed -> true
+Update status
        |
-Append separate "appeal" audit log entry
+under_review
+       |
+Save appeal
+       |
+Audit Log
        |
 Return confirmation
 ```
 
-(Full diagram and narrative also live in `planning.md`.)
-
 ---
 
-## Detection Signals
+# Calibration Validation
 
-Two independent, genuinely distinct signals are used — one semantic, one structural — as required.
-
-**1. Groq LLM classification (`llama-3.3-70b-versatile`)**
-The model is prompted to read the full text and return a JSON score from 0 (very likely human) to 1 (very likely AI) plus a short reasoning string. This captures things a rules-based check can't: repetitive AI phrasing patterns, generic hedging language ("it is important to note that..."), and overall semantic coherence.
-*What it misses:* it can misjudge polished, formal human writing as AI-like, and its output quality depends entirely on the prompt — it has no ground truth, just a learned impression.
-
-**2. Stylometric heuristics (pure Python, no external calls)**
-Computes four measurable properties of the text: sentence-length variance, type-token ratio (vocabulary diversity), average sentence length, and punctuation density. AI-generated text tends to be more uniform (low sentence-length variance, moderate-to-flat vocabulary diversity); human writing tends to be more irregular. Each metric contributes a partial score, summed into a 0–1 stylometric score.
-*What it misses:* short texts don't contain enough sentences for the variance/length metrics to mean anything, and poetry or intentionally repetitive writing will look artificially "AI-like" even when it's fully human.
-
-Because one signal reasons about meaning and the other only counts things, they fail in different places — which is the point of combining them rather than relying on either alone.
-
----
-
-## Confidence Scoring
-
-```
-confidence = (llm_score * 0.6) + (stylometric_score * 0.4)
-```
-
-The Groq signal is weighted higher because it reasons about the text semantically rather than only measuring surface statistics, so it's treated as the stronger of the two signals — but it isn't the only vote, specifically because it can be wrong on formal human writing.
-
-**Thresholds:**
-
-| Confidence range | Attribution |
-|---|---|
-| 0.70 – 1.00 | `likely_ai` |
-| 0.31 – 0.69 | `uncertain` |
-| 0.00 – 0.30 | `likely_human` |
-
-A 0.51 and a 0.95 confidence never produce the same label: only scores at or above 0.70 (or at/below 0.30) commit to a directional verdict; everything in the middle band is explicitly returned as `uncertain`, with label text that says so in plain language rather than forcing a coin-flip label.
-
-**Validating that the score is meaningful:** I ran all four test inputs from the project spec through the live system (Groq signal + stylometric signal + combined confidence):
+Milestone 4 requires testing the scoring pipeline against deliberately chosen inputs spanning the confidence range, and checking whether the results match intuition. Actual results from a live run against the four spec test inputs:
 
 | Input | llm_score | stylometric_score | confidence | attribution |
 |---|---|---|---|---|
-| Clearly AI-generated paragraph | 0.2 | 0.45 | **0.30** | `likely_human` |
-| Clearly human ramen review | 0.0 | 0.35 | **0.14** | `likely_human` |
-| Borderline formal human (monetary policy) | 0.2 | 0.45 | **0.30** | `likely_human` |
-| Borderline lightly-edited AI (remote work) | 0.2 | 0.6 | **0.36** | `uncertain` |
+| Clearly AI-generated paragraph | 0.2 | 0.45 | 0.30 | `likely_human` |
+| Clearly human ramen review | 0.0 | 0.35 | 0.14 | `likely_human` |
+| Borderline formal human (monetary policy) | 0.2 | 0.45 | 0.30 | `likely_human` |
+| Borderline lightly-edited AI (remote work) | 0.2 | 0.6 | 0.36 | `uncertain` |
 
-The stylometric signal produced real variation as expected (0.35–0.6 across the four cases). The Groq signal, however, never scored above 0.2 on any input in this test set — including the paragraph deliberately written to be obviously AI-generated. Reading the model's stored reasoning (via `/log`) shows why: it judged AI-likelihood by *topic* rather than *style* — e.g. it reasoned that a paragraph about AI ethics is "common in human-written discussions about AI, suggesting a human author," rather than picking up on the actual stylistic tells (generic hedging language, "furthermore," formulaic completeness). This is a real, specific weakness in the current prompt, not a hypothetical one — see Known Limitations below.
-
-**Two examples with actual combined confidence scores**, showing the most contrast this signal pairing currently produces:
-
-```json
-// Clearly human writing (ramen review) — most confident result in this test set
-{
-  "attribution": "likely_human",
-  "confidence": 0.14,
-  "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
-  "label": "This content appears likely to be human-written based on multiple detection signals. Confidence: 0.14.",
-  "signals": { "llm_score": 0.0, "stylometric_score": 0.35 },
-  "status": "classified"
-}
-
-// Borderline lightly-edited AI text — pushed into the uncertain band
-{
-  "attribution": "uncertain",
-  "confidence": 0.36,
-  "content_id": "4144c6a8-64fe-4cd7-84d9-a011f51406a2",
-  "label": "We are not confident enough to determine whether this content was AI-generated or human-written. This result should be treated as uncertain. Confidence: 0.36.",
-  "signals": { "llm_score": 0.2, "stylometric_score": 0.6 },
-  "status": "classified"
-}
-```
+The stylometric signal behaved as designed — real variation across inputs, correctly flagging the formal/uniform text as more AI-like on structure alone. The Groq signal did not: it never scored above 0.2 on any input, including the paragraph deliberately written to be obviously AI-generated. Its stored reasoning showed it was evaluating whether the *topic* is something humans commonly write about, rather than whether the *style* of the writing itself looks generated. This means the current system, as calibrated, is biased toward `likely_human`/`uncertain` verdicts and would need Groq-prompt iteration (e.g., asking explicitly about generative stylistic markers rather than plausibility of authorship) before it could be trusted to catch clear-cut AI text in production. This is documented as a known limitation in the README rather than fixed post hoc, since it's a legitimate finding about a real blind spot in the signal as specified.
 
 ---
 
-## Transparency Label
+# Edge Cases
 
-The label text returned by `/submit` changes based on the confidence score. Exact text, verbatim from the code:
+### Formal Academic Writing
 
-**High-confidence AI:**
-> This content appears likely to be AI-generated based on multiple detection signals. Confidence: {confidence}.
-
-**High-confidence human:**
-> This content appears likely to be human-written based on multiple detection signals. Confidence: {confidence}.
-
-**Uncertain:**
-> We are not confident enough to determine whether this content was AI-generated or human-written. This result should be treated as uncertain. Confidence: {confidence}.
-
-`{confidence}` is replaced with the actual numeric score (e.g. `0.84`), so a reader always sees the number behind the verdict, not just the label.
+May appear AI-generated because it is structured and grammatically consistent.
 
 ---
 
-## Appeals Workflow
+### Poetry
 
-Any creator who has a `content_id` from a prior submission can appeal by sending it plus their reasoning to `POST /appeal`. The endpoint:
-1. locates the matching submission entry in the audit log,
-2. sets that entry's `status` to `under_review` and `appeal_filed` to `true`,
-3. writes a new, separate `appeal`-type entry containing the original attribution, original confidence, and the creator's reasoning,
-4. returns a confirmation with `status: "under_review"`.
-
-No automatic reclassification happens — the appeal entry exists so a human reviewer can compare the model's verdict against the creator's stated context.
-
-Test it with a real `content_id` from a prior submission:
-
-```bash
-curl -s -X POST http://localhost:5000/appeal \
-  -H "Content-Type: application/json" \
-  -d '{"content_id": "PASTE-CONTENT-ID-HERE", "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical."}' | python -m json.tool
-```
-
-`[PASTE the appeal response here, and confirm via GET /log that the entry shows status: under_review]`
-
-**Actual test run:**
-
-```json
-// POST /appeal response
-{
-  "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
-  "message": "Appeal received.",
-  "status": "under_review"
-}
-```
-
-Confirmed in the audit log — the original submission's status flipped to `under_review` and `appeal_filed` became `true`, and a separate `appeal` event was appended recording the original verdict alongside the creator's reasoning:
-
-```json
-{
-  "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
-  "creator_id": "test-user-human",
-  "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical.",
-  "event_type": "appeal",
-  "original_attribution": "likely_human",
-  "original_confidence": 0.14,
-  "status": "under_review",
-  "timestamp": "2026-07-01T04:55:09.971114+00:00"
-}
-```
+Sentence length and punctuation metrics are unreliable.
 
 ---
 
-## Rate Limiting
+### Very Short Text
 
-`/submit` is limited to **10 requests per minute and 100 per day per IP** (via Flask-Limiter, in-memory storage).
-
-Reasoning: a single legitimate creator submitting their own work isn't going to hit double digits of submissions in one minute — that pattern only shows up from a script trying to flood the endpoint (which is also the expensive path, since every request triggers a paid Groq API call). 10/minute leaves comfortable headroom for someone iterating on a few drafts in one sitting while making a scripted flood immediately visible. The 100/day ceiling caps the worst case for a single IP that stays just under the per-minute limit — enough for genuinely heavy daily use, not enough to run up an unbounded Groq bill or degrade the service for others.
-
-**Evidence** (run this against your local server and paste the actual status codes — you should see ten `200`s followed by `429`s):
-
-```bash
-for i in $(seq 1 12); do
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5000/submit \
-    -H "Content-Type: application/json" \
-    -d '{"text": "This is a test submission for rate limit testing purposes only.", "creator_id": "ratelimit-test"}'
-done
-```
-
-`[PASTE the 12 status codes here]`
-
-**Actual test run** (10 successes, then the limiter engages):
-
-```
-1: 200
-2: 200
-3: 200
-4: 200
-5: 200
-6: 200
-7: 200
-8: 200
-9: 200
-10: 200
-11: 429
-12: 429
-```
+Small samples don't contain enough information for reliable stylometric analysis.
 
 ---
 
-## Audit Log
+### Non-native English Writers
 
-Every submission and every appeal writes a structured JSON entry to `audit_log.json`, retrievable via `GET /log` (last 20 entries). Each submission entry records: `content_id`, `creator_id`, `timestamp`, `attribution`, `confidence`, `llm_score` + `llm_reasoning`, `stylometric_score` + full `stylometric_metrics`, `status`, and `appeal_filed`. Each appeal entry records: `content_id`, `creator_id`, `timestamp`, the original attribution/confidence, the creator's reasoning, and `status`.
-
-Run at least 3 submissions plus 1 appeal against your local server, then paste real output here:
-
-```bash
-curl -s http://localhost:5000/log | python -m json.tool
-```
-
-`[PASTE at least 3 submission entries + 1 appeal entry from your actual audit_log.json here]`
-
-**Actual log output** (`GET /log`, 4 submissions + 1 appeal from live testing):
-
-```json
-{
-  "entries": [
-    {
-      "appeal_filed": false,
-      "attribution": "likely_human",
-      "confidence": 0.3,
-      "content_id": "35e77c79-70b2-4642-a019-7ec597cc7860",
-      "creator_id": "test-user-ai",
-      "event_type": "submission",
-      "llm_reasoning": "The text features complex sentence structures and vocabulary, but the themes and ideas presented are common in human-written discussions about AI, suggesting a human author.",
-      "llm_score": 0.2,
-      "status": "classified",
-      "stylometric_metrics": {
-        "avg_sentence_length": 14.333,
-        "punctuation_density": 0.047,
-        "sentence_length_variance": 29.556,
-        "type_token_ratio": 0.884,
-        "word_count": 43
-      },
-      "stylometric_score": 0.45,
-      "timestamp": "2026-07-01T04:40:50.662604+00:00"
-    },
-    {
-      "appeal_filed": true,
-      "attribution": "likely_human",
-      "confidence": 0.14,
-      "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
-      "creator_id": "test-user-human",
-      "event_type": "submission",
-      "llm_reasoning": "The text contains casual language, personal experience, and subjective opinions, which are characteristic of human-written reviews.",
-      "llm_score": 0.0,
-      "status": "under_review",
-      "stylometric_metrics": {
-        "avg_sentence_length": 11.2,
-        "punctuation_density": 0.018,
-        "sentence_length_variance": 44.56,
-        "type_token_ratio": 0.875,
-        "word_count": 56
-      },
-      "stylometric_score": 0.35,
-      "timestamp": "2026-07-01T04:50:52.049971+00:00"
-    },
-    {
-      "appeal_filed": false,
-      "attribution": "uncertain",
-      "confidence": 0.36,
-      "content_id": "4144c6a8-64fe-4cd7-84d9-a011f51406a2",
-      "creator_id": "test-user-edited-ai",
-      "event_type": "submission",
-      "llm_reasoning": "The text appears to be a personal reflection with a balanced view, using phrases like 'I've been thinking' and 'genuine tradeoffs', which is more typical of human writing.",
-      "llm_score": 0.2,
-      "status": "classified",
-      "stylometric_metrics": {
-        "avg_sentence_length": 13.333,
-        "punctuation_density": 0.025,
-        "sentence_length_variance": 22.222,
-        "type_token_ratio": 0.9,
-        "word_count": 40
-      },
-      "stylometric_score": 0.6,
-      "timestamp": "2026-07-01T04:51:17.146443+00:00"
-    },
-    {
-      "content_id": "7b5229f8-d7cd-4954-841f-9e0e337a75c8",
-      "creator_id": "test-user-human",
-      "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical.",
-      "event_type": "appeal",
-      "original_attribution": "likely_human",
-      "original_confidence": 0.14,
-      "status": "under_review",
-      "timestamp": "2026-07-01T04:55:09.971114+00:00"
-    }
-  ]
-}
-```
-
-Note the third entry above: the submission that was appealed shows both `"status": "under_review"` and `"appeal_filed": true`, confirming the appeal endpoint correctly mutated the original entry in place while still preserving its original `attribution`, `confidence`, and both signal scores exactly as they were computed at classification time.
+Writing style may resemble AI due to simple vocabulary and repetitive sentence structure.
 
 ---
 
-## Known Limitations
+# AI Tool Plan
 
-**The Groq signal is biased toward "human" verdicts and appears to judge topic rather than style.** Across all four test inputs — including a paragraph deliberately written to be obviously AI-generated ("Artificial intelligence represents a transformative paradigm shift...") — the Groq signal never scored above 0.2. Its stored reasoning (visible via `/log`) shows it reasoning about subject matter rather than writing style: it judged the AI-ethics paragraph as human-written because "the themes and ideas presented are common in human-written discussions about AI," rather than picking up on the actual generative tells in the text itself (generic hedging phrases, "furthermore," formulaic completeness). Since the Groq signal is weighted 60% in the combined score, this pulls the whole pipeline toward `likely_human`/`uncertain` even on clear-cut AI text, and it's the single biggest thing I'd want to fix with more prompt iteration before trusting this in production.
+## Milestone 3
 
-**Formal or academic human writing scores higher on the "AI-like" end than it should, on the stylometric side.** The borderline formal-human test case (monetary policy paragraph) scored 0.45 on stylometrics — noticeably higher than the casual human ramen review (0.35) — purely because long, structurally consistent sentences trigger the same "low variance = more AI-like" heuristic meant to catch actual AI output. Anyone writing in a formal register (academic papers, legal writing, technical documentation) is structurally penalized by this signal regardless of who wrote it — and in this test set it actually landed at the *identical* confidence score (0.30) as the genuinely AI-generated paragraph, for opposite reasons.
+Provide:
 
-**Very short submissions are unreliable on the stylometric side.** With only one or two sentences, sentence-length variance is nearly meaningless (there's nothing to vary against), so the stylometric score for short text is mostly noise, leaving the Groq signal — which has its own bias problem above — to carry the whole verdict alone.
+- Detection Signals
+- Architecture
 
----
+Ask AI to generate:
 
-## Spec Reflection
+- Flask application
+- /submit endpoint
+- Groq detector
 
-Writing out the exact three label strings in `planning.md` *before* touching the Flask code meant `get_label()` was a pure lookup function from the start — there was never a moment where I was improvising label wording inside the route handler, which kept the endpoint logic focused on scoring rather than string formatting.
+Verify:
 
-Where the implementation diverged: the original plan treated the appeal as something that would *update* the existing submission log entry in place. In practice I kept the original submission entry immutable (aside from flipping `status`/`appeal_filed`) and appended a fully separate `appeal` event instead, so the audit trail preserves the original scoring decision exactly as it was made rather than overwriting it — which matters if a reviewer ever needs to see what the model actually said before the appeal was filed.
-
----
-
-## AI Usage
-
-- **Directed the AI to generate** the Flask app skeleton and the Groq detector function (Milestone 3), giving it the Detection Signals section of `planning.md` plus the architecture diagram. **Revised:** the generated Groq prompt didn't originally constrain the model to return *only* JSON, which caused occasional parse failures; I tightened the prompt wording and added the try/except fallback that returns a neutral 0.5 score with an explanatory reason if the Groq call or JSON parse fails for any reason.
-- **Directed the AI to generate** the stylometric scoring function and the score-combination logic (Milestone 4), giving it the Detection Signals + Uncertainty Representation sections. **Overrode:** the first version it produced used a 50/50 weighting; I changed it to 60/40 in favor of the Groq signal to match the reasoning already written in `planning.md`, and double-checked the threshold boundaries (0.70 / 0.31–0.69 / 0.30) actually matched what was specified rather than the more common 0.5 midpoint split it defaulted to.
-- **Caught during live testing, not AI-generated:** while validating the pipeline end-to-end with the four spec test inputs, I noticed the Groq signal never scored above 0.2 on any of them — including the text deliberately written to be obviously AI-generated (see Known Limitations). The model's stored `llm_reasoning` showed it was judging subject matter rather than writing style. I did not have the AI tool "fix" the prompt for this submission, since diagnosing and documenting a real, discovered blind spot in the detection signal is more valuable evidence of understanding the system than papering over it with a quick prompt patch.
+- Endpoint returns valid JSON.
 
 ---
 
-## Setup
+## Milestone 4
 
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Mac/Linux
-pip install -r requirements.txt
-```
+Provide:
 
-Create a `.env` file in the repo root (already excluded via `.gitignore` — never commit it):
+- Detection Signals
+- Confidence Scoring
 
-```
-GROQ_API_KEY=your_key_here
-```
+Ask AI to generate:
 
-Run the server:
+- Stylometric detector
+- Score combination logic
 
-```bash
-python app.py
-```
+Verify:
 
-**Endpoints:** `GET /`, `POST /submit`, `POST /appeal`, `GET /log`.
+- AI text scores higher than human text.
+
+---
+
+## Milestone 5
+
+Provide:
+
+- Transparency Labels
+- Appeals Workflow
+
+Ask AI to generate:
+
+- Label generation
+- /appeal endpoint
+- Rate limiting
+- Audit logging
+
+Verify:
+
+- All three labels appear.
+- Appeals update status correctly.
+- Audit log records every action.
